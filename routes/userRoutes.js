@@ -6,16 +6,17 @@ const {
   resetPassword,
   forgotPassword,
   updatePassword,
+  restrictTo,
 } = require('../controllers/authController');
 
 const {
   getAllUsers,
-  createUser,
   getUser,
   updateUser,
   delUser,
   updateMe,
   deleteMe,
+  getMe,
 } = require('../controllers/userController');
 
 // ROUTES
@@ -26,11 +27,17 @@ router.post('/login', login);
 
 router.post('/forgotPassword', forgotPassword);
 router.patch('/resetPassword/:token', resetPassword);
+
 router.patch('/updateMyPassword', protect, updatePassword);
+router.get('/me', protect, getMe, getUser);
 router.patch('/updateMe', protect, updateMe);
 router.delete('/deleteMe', protect, deleteMe);
 
-router.route('/').get(protect, getAllUsers).post(createUser);
-router.route('/:id').get(getUser).patch(updateUser).delete(delUser);
+router.route('/').get(protect, restrictTo('admin'), getAllUsers);
+router
+  .route('/:id')
+  .get(protect, restrictTo('admin'), getUser)
+  .patch(protect, restrictTo('admin'), updateUser)
+  .delete(protect, restrictTo('admin'), delUser);
 
 module.exports = router;

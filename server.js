@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 
 process.on('uncaughtException', (err) => {
   console.log('Uncaught Rejection! Shutting Down...');
-  console.log(err.name, err.message);
+  console.log(err.name, err.message, err.stack);
   process.exit(1);
 });
 
@@ -35,6 +35,6 @@ const server = app.listen(port, () => {
 
 process.on('unhandledRejection', (err) => {
   console.log('Unhandler Rejection! Shutting Down...');
-  console.log(err.name, err.message);
+  console.log(err.name, err.message, err.stack);
   server.close(() => process.exit(1));
 });
