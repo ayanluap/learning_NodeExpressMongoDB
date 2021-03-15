@@ -20,11 +20,13 @@ const createSendToken = (user, statusCode, res) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
+    // maxAge: 24 * 60 * 60,
     // secure: true, // Cookie only sent in encrypted connection
     httpOnly: true, // Prevent cross site scripting
   };
 
   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
   res.cookie('jwt', token, cookieOptions);
 
   // remove password field from response not from DB
@@ -110,6 +112,35 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // 5.) Grant access to the protected route
   req.user = currentUser;
+  // res.locals.user = currentUser;
+  next();
+});
+
+// NO ERRORS, Only for rendered pages
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+  if (req.cookies.jwt) {
+    // 1.) verify token
+    const decoded = await promisify(jwt.verify)(
+      req.cookies.jwt,
+      process.env.JWT_SECRET
+    );
+
+    // 3.) Check if User still exist or not
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next();
+    }
+
+    // 4.) Auth check if user change password after JWT issued
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      next();
+    }
+
+    // 5.) There is a logged in user
+    // req.user = currentUser;
+    res.locals.user = currentUser;
+    next();
+  }
   next();
 });
 

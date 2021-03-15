@@ -10,6 +10,7 @@ const login = async (email, password) => {
         email,
         password,
       },
+      credentials: true,
     });
     console.log(res);
   } catch (err) {

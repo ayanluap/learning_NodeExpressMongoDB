@@ -8,6 +8,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
 
 const AppError = require('./utils/appError');
 const GlobalErrorHandler = require('./controllers/errorController');
@@ -47,7 +48,14 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Body Parser , read data from the body req.body
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '1mb',
+  })
+);
+app.use(cors());
 app.use(cookieParser());
 
 // Data sanitization against NoSQL injection
@@ -57,21 +65,27 @@ app.use(mongoSanitize());
 app.use(xss());
 
 // CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
-
-// CSP error fix
 // app.use((req, res, next) => {
-//   res.setHeader(
-//     'Content-Security-Policy',
-//     "default-src 'self' *; script-src 'self' *; connect-src 'self' *; img-src 'self'; style-src 'self' *;"
-//   );
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Headers', 'Content-Type');
 
 //   next();
 // });
+// app.use(
+//   cors({
+//     origin: [`${process.env.FRONT_URL}`, 'http://localhost:3000'],
+//     credentials: true,
+//   })
+// );
+
+// CSP ERRORS fix
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self' http://127.0.0.1:3000; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://fonts.googleapis.com; frame-src 'self'"
+  );
+  next();
+});
 
 // prevent parameter pollution
 app.use(
@@ -90,7 +104,7 @@ app.use(
 // Testing Middleware
 app.use((req, res, next) => {
   req.reqTime = new Date().toUTCString();
-  console.log(req.cookies.jwt);
+  console.log(req.cookies);
   next();
 });
 
